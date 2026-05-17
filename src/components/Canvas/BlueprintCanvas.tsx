@@ -1,21 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { Stage, Layer, Rect, Group, Text } from 'react-konva'
+import { Stage, Layer, Rect, Group, Text, Circle } from 'react-konva'
 import type Konva from 'konva'
 import { Grid } from './Grid'
 import { RoomShape } from './RoomShape'
-import { PinView } from './Pin'
 import { useStore, useActiveFloor } from '../../store/useStore'
 import { clamp, snap } from '../../lib/geometry'
-import type { Room, RoomType } from '../../store/types'
-import { ROOM_TYPE_LABEL } from '../../lib/constants'
+import type { RoomType } from '../../store/types'
+import { CATEGORY_COLOR, ROOM_TYPE_LABEL } from '../../lib/constants'
 
 const MIN_SCALE = 0.2
 const MAX_SCALE = 4
 
 const toolToRoomType = (t: string): RoomType | null => {
   if (!t.startsWith('draw-')) return null
-  const k = t.slice(5) as RoomType
-  return k
+  return t.slice(5) as RoomType
 }
 
 interface DragRect {
@@ -43,15 +41,9 @@ export const BlueprintCanvas = () => {
   const addRoom = useStore((s) => s.addRoom)
   const updateRoom = useStore((s) => s.updateRoom)
   const focusRoom = useStore((s) => s.focusRoom)
-  const addPin = useStore((s) => s.addPin)
-  const updatePin = useStore((s) => s.updatePin)
-  const togglePinDone = useStore((s) => s.togglePinDone)
 
   const floor = useActiveFloor()
-  const focusedRoom: Room | null =
-    floor?.rooms.find((r) => r.id === view.focusedRoomId) ?? null
 
-  // Resize observer on the container
   useEffect(() => {
     if (!containerRef.current) return
     const el = containerRef.current
@@ -63,20 +55,6 @@ export const BlueprintCanvas = () => {
     return () => ro.disconnect()
   }, [])
 
-  // When entering room-focus mode, animate to the room.
-  useEffect(() => {
-    if (!focusedRoom) return
-    const padding = 60
-    const sx = (size.width - padding * 2) / focusedRoom.width
-    const sy = (size.height - padding * 2) / focusedRoom.height
-    const scale = clamp(Math.min(sx, sy), MIN_SCALE, MAX_SCALE)
-    const x = size.width / 2 - (focusedRoom.x + focusedRoom.width / 2) * scale
-    const y = size.height / 2 - (focusedRoom.y + focusedRoom.height / 2) * scale
-    setView({ scale, x, y })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view.focusedRoomId, size.width, size.height])
-
-  // Reset view when changing floor
   useEffect(() => {
     setView({ scale: 1, x: 40, y: 40, focusedRoomId: null })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,30 +92,6 @@ export const BlueprintCanvas = () => {
       if (!pointer) return
       const w = stageToWorld(pointer.x, pointer.y)
       setDragRect({ x: snap(w.x), y: snap(w.y), width: 0, height: 0 })
-      return
-    }
-
-    if (tool === 'add-pin' && focusedRoom && isStage) {
-      const stage = stageRef.current
-      if (!stage) return
-      const pointer = stage.getPointerPosition()
-      if (!pointer) return
-      const w = stageToWorld(pointer.x, pointer.y)
-      const lx = w.x - focusedRoom.x
-      const ly = w.y - focusedRoom.y
-      if (lx < 0 || ly < 0 || lx > focusedRoom.width || ly > focusedRoom.height) return
-      addPin(focusedRoom.id, {
-        x: lx,
-        y: ly,
-        title: 'New todo',
-        description: '',
-        category: 'general',
-        priority: 'med',
-        done: false,
-        estimatedCost: 0,
-        actualCost: 0,
-        photos: [],
-      })
       return
     }
 
@@ -184,16 +138,8 @@ export const BlueprintCanvas = () => {
 
   const stageDraggable = tool === 'pan'
 
-  const filteredPinIds = (room: Room) =>
-    room.pins.filter((p) => {
-      if (filter.onlyOpen && p.done) return false
-      if (filter.category !== 'all' && p.category !== filter.category) return false
-      if (filter.priority !== 'all' && p.priority !== filter.priority) return false
-      return true
-    })
-
   return (
-    <div ref={containerRef} className="h-full w-full">
+    <div ref={containerRef} className="absolute inset-0">
       <Stage
         ref={stageRef}
         width={size.width}
@@ -221,12 +167,9 @@ export const BlueprintCanvas = () => {
               ? 'grab'
               : tool.startsWith('draw-')
               ? 'crosshair'
-              : tool === 'add-pin'
-              ? 'copy'
               : 'default',
         }}
       >
-        {/* Background grid layer */}
         {showGrid && (
           <Layer listening={false}>
             <Grid
@@ -239,76 +182,66 @@ export const BlueprintCanvas = () => {
           </Layer>
         )}
 
-        {/* Rooms layer */}
         <Layer>
-          {/* Floor backdrop */}
-          {!focusedRoom && (
-            <Group listening={false}>
-              <Text
-                x={20}
-                y={20}
-                text={floor?.name ?? ''}
-                fontSize={28}
-                fontStyle="700"
-                fill="#1f2937"
-                opacity={0.9}
-              />
-              <Text
-                x={20}
-                y={54}
-                text={`${floor?.rooms.length ?? 0} rooms · double-click a room to zoom in`}
-                fontSize={12}
-                fill="#6b7280"
-              />
-            </Group>
-          )}
+          <Group listening={false}>
+            <Text
+              x={20}
+              y={20}
+              text={floor?.name ?? ''}
+              fontSize={28}
+              fontStyle="700"
+              fill="#1f2937"
+              opacity={0.9}
+            />
+            <Text
+              x={20}
+              y={54}
+              text={`${floor?.rooms.length ?? 0} rooms · double-click a room to open it`}
+              fontSize={12}
+              fill="#6b7280"
+            />
+          </Group>
 
           {floor?.rooms.map((room) => (
             <RoomShape
               key={room.id}
               room={room}
               selected={selection?.kind === 'room' && selection.roomId === room.id}
-              showHeatmap={showHeatmap && !focusedRoom}
-              draggable={tool === 'select' && !focusedRoom}
+              showHeatmap={showHeatmap}
+              draggable={tool === 'select'}
               onSelect={() => setSelection({ kind: 'room', roomId: room.id })}
               onZoomIn={() => focusRoom(room.id)}
               onChange={(patch) => updateRoom(room.id, patch)}
             />
           ))}
 
-          {/* Pins overlay */}
+          {/* Tiny pin dots overlay (plan view summary) */}
           {floor?.rooms.flatMap((room) =>
-            filteredPinIds(room).map((pin) => {
-              const isCompact = !focusedRoom || focusedRoom.id !== room.id
-              return (
-                <PinView
+            room.pins
+              .filter((p) => {
+                if (filter.onlyOpen && p.done) return false
+                if (filter.category !== 'all' && p.category !== filter.category) return false
+                if (filter.priority !== 'all' && p.priority !== filter.priority) return false
+                return true
+              })
+              .map((pin) => (
+                <Group
                   key={pin.id}
-                  pin={pin}
-                  compact={isCompact}
                   x={room.x + pin.x}
                   y={room.y + pin.y}
-                  selected={
-                    selection?.kind === 'pin' &&
-                    selection.roomId === room.id &&
-                    selection.pinId === pin.id
-                  }
-                  onSelect={() =>
-                    setSelection({ kind: 'pin', roomId: room.id, pinId: pin.id })
-                  }
-                  onDragEnd={(nx, ny) => {
-                    const lx = nx - room.x
-                    const ly = ny - room.y
-                    const cx = clamp(lx, 0, room.width - 4)
-                    const cy = clamp(ly, 0, room.height - 4)
-                    updatePin(room.id, pin.id, { x: cx, y: cy })
-                  }}
-                  onToggleDone={() => togglePinDone(room.id, pin.id)}
-                />
-              )
-            }),
+                  listening={false}
+                >
+                  <Circle
+                    radius={4}
+                    fill={CATEGORY_COLOR[pin.category]}
+                    stroke={pin.done ? '#10b981' : '#ffffff'}
+                    strokeWidth={pin.done ? 1.5 : 1}
+                    opacity={pin.done ? 0.55 : 1}
+                  />
+                </Group>
+              )),
           )}
 
-          {/* Live drawing preview */}
           {dragRect && (
             <Rect
               x={dragRect.width < 0 ? dragRect.x + dragRect.width : dragRect.x}

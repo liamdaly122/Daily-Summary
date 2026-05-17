@@ -78,7 +78,6 @@ export type Tool =
   | 'draw-corridor'
   | 'draw-staircase'
   | 'draw-garage'
-  | 'add-pin'
 
 export interface ViewState {
   /** Canvas scale */
@@ -94,6 +93,12 @@ export type Selection =
   | { kind: 'room'; roomId: string }
   | { kind: 'pin'; roomId: string; pinId: string }
 
+export interface PanelState {
+  x: number
+  y: number
+  collapsed: boolean
+}
+
 export interface UIState {
   sidebarOpen: boolean
   showGrid: boolean
@@ -103,4 +108,5 @@ export interface UIState {
     priority: Priority | 'all'
     onlyOpen: boolean
   }
+  panels: Record<string, PanelState>
 }

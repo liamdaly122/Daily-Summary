@@ -154,6 +154,7 @@ const buildInitial = (): AppState => {
         priority: 'all',
         onlyOpen: false,
       },
+      panels: persisted?.ui?.panels ?? {},
     },
   }
 }
@@ -180,6 +181,8 @@ interface Actions {
   setFilterCategory: (c: Category | 'all') => void
   setFilterPriority: (p: Priority | 'all') => void
   setFilterOnlyOpen: (v: boolean) => void
+  movePanel: (id: string, x: number, y: number) => void
+  togglePanelCollapsed: (id: string, defaultPos?: { x: number; y: number }) => void
   resetAll: () => void
 }
 
@@ -313,8 +316,8 @@ export const useStore = create<AppState & Actions>((set, get) => ({
   focusRoom: (roomId) =>
     set((s) => ({
       view: { ...s.view, focusedRoomId: roomId },
-      selection: roomId ? { kind: 'room', roomId } : s.selection,
-      tool: roomId ? 'add-pin' : 'select',
+      selection: roomId ? null : s.selection,
+      tool: 'select',
     })),
 
   toggleSidebar: () => set((s) => ({ ui: { ...s.ui, sidebarOpen: !s.ui.sidebarOpen } })),
@@ -327,6 +330,32 @@ export const useStore = create<AppState & Actions>((set, get) => ({
     set((s) => ({ ui: { ...s.ui, filter: { ...s.ui.filter, priority: p } } })),
   setFilterOnlyOpen: (v) =>
     set((s) => ({ ui: { ...s.ui, filter: { ...s.ui.filter, onlyOpen: v } } })),
+
+  movePanel: (id, x, y) =>
+    set((s) => ({
+      ui: {
+        ...s.ui,
+        panels: {
+          ...s.ui.panels,
+          [id]: { ...(s.ui.panels[id] ?? { collapsed: false }), x, y },
+        },
+      },
+    })),
+
+  togglePanelCollapsed: (id, defaultPos) =>
+    set((s) => {
+      const existing = s.ui.panels[id] ?? {
+        x: defaultPos?.x ?? 16,
+        y: defaultPos?.y ?? 16,
+        collapsed: false,
+      }
+      return {
+        ui: {
+          ...s.ui,
+          panels: { ...s.ui.panels, [id]: { ...existing, collapsed: !existing.collapsed } },
+        },
+      }
+    }),
 
   resetAll: () => set({ ...buildInitial(), floors: seedFloors(), activeFloorId: '' }),
 }))

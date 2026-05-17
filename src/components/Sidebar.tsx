@@ -1,25 +1,56 @@
-import { useStore, useSelectedPin, useSelectedRoom } from '../store/useStore'
+import { useStore, useSelectedPin, useSelectedRoom, useActiveFloor } from '../store/useStore'
 import { PinEditor } from './PinEditor'
 import { RoomEditor } from './RoomEditor'
 import { FloorSummary } from './FloorSummary'
+import { FloatingPanel } from './FloatingPanel'
 
 export const Sidebar = () => {
-  const sidebarOpen = useStore((s) => s.ui.sidebarOpen)
   const selection = useStore((s) => s.selection)
+  const focusedRoomId = useStore((s) => s.view.focusedRoomId)
   const room = useSelectedRoom()
   const pin = useSelectedPin()
+  const floor = useActiveFloor()
 
-  if (!sidebarOpen) return null
+  const defaultX = Math.max(16, window.innerWidth - 360)
+  const defaultY = 16
+
+  // What kind of content to show
+  let title = floor?.name ?? 'Floor'
+  let icon: React.ReactNode = <span>📋</span>
+  let content: React.ReactNode
+
+  if (selection?.kind === 'pin' && pin && room) {
+    title = 'Todo pin'
+    icon = <span>📌</span>
+    content = <PinEditor roomId={room.id} pin={pin} />
+  } else if (selection?.kind === 'room' && room) {
+    title = room.name
+    icon = <span>▭</span>
+    content = <RoomEditor room={room} />
+  } else if (focusedRoomId) {
+    // Focused on a room but nothing selected — show that room's editor
+    const focused = floor?.rooms.find((r) => r.id === focusedRoomId)
+    if (focused) {
+      title = focused.name
+      icon = <span>▭</span>
+      content = <RoomEditor room={focused} />
+    } else {
+      content = <FloorSummary />
+    }
+  } else {
+    content = <FloorSummary />
+  }
 
   return (
-    <aside className="pointer-events-auto absolute right-4 top-4 z-20 flex h-[calc(100%-2rem)] w-80 flex-col overflow-hidden rounded-2xl border border-blueprint-line bg-white/95 shadow-pop backdrop-blur">
-      {selection?.kind === 'pin' && pin && room ? (
-        <PinEditor roomId={room.id} pin={pin} />
-      ) : selection?.kind === 'room' && room ? (
-        <RoomEditor room={room} />
-      ) : (
-        <FloorSummary />
-      )}
-    </aside>
+    <FloatingPanel
+      id="sidebar"
+      title={title}
+      icon={icon}
+      defaultX={defaultX}
+      defaultY={defaultY}
+      width={320}
+    >
+      {content}
+    </FloatingPanel>
   )
 }
