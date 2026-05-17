@@ -21,6 +21,18 @@ export type RoomType =
   | 'garage'
   | 'outdoor'
 
+export interface Subtask {
+  id: string
+  title: string
+  done: boolean
+}
+
+export interface PinLink {
+  id: string
+  url: string
+  title?: string
+}
+
 export interface Pin {
   id: string
   /** position relative to the room's top-left, in plan units (px) */
@@ -34,6 +46,8 @@ export interface Pin {
   estimatedCost: number
   actualCost: number
   photos: string[] // base64 data URLs
+  subtasks?: Subtask[]
+  links?: PinLink[]
   createdAt: number
   updatedAt: number
 }
@@ -57,6 +71,17 @@ export interface Floor {
   rooms: Room[]
 }
 
+export interface DeletedSnapshot {
+  kind: 'pin' | 'room'
+  at: number
+  floorId: string
+  /** For pin restores */
+  roomId?: string
+  pin?: Pin
+  /** For room restores */
+  room?: Room
+}
+
 export interface AppState {
   floors: Floor[]
   activeFloorId: string
@@ -64,6 +89,8 @@ export interface AppState {
   tool: Tool
   selection: Selection | null
   ui: UIState
+  lastDeleted: DeletedSnapshot | null
+  commandPaletteOpen: boolean
 }
 
 export type Tool =

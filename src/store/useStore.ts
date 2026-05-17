@@ -145,6 +145,8 @@ const buildInitial = (): AppState => {
     tool: 'select',
     selection: null,
     view: { scale: 1, x: 0, y: 0, focusedRoomId: null },
+    lastDeleted: null,
+    commandPaletteOpen: false,
     ui: {
       sidebarOpen: persisted?.ui?.sidebarOpen ?? true,
       showGrid: persisted?.ui?.showGrid ?? true,
@@ -183,6 +185,14 @@ interface Actions {
   setFilterOnlyOpen: (v: boolean) => void
   movePanel: (id: string, x: number, y: number) => void
   togglePanelCollapsed: (id: string, defaultPos?: { x: number; y: number }) => void
+  addSubtask: (roomId: string, pinId: string, title: string) => void
+  updateSubtask: (roomId: string, pinId: string, subtaskId: string, patch: Partial<{ title: string; done: boolean }>) => void
+  removeSubtask: (roomId: string, pinId: string, subtaskId: string) => void
+  addLink: (roomId: string, pinId: string, url: string, title?: string) => void
+  removeLink: (roomId: string, pinId: string, linkId: string) => void
+  undoDelete: () => void
+  clearLastDeleted: () => void
+  setCommandPaletteOpen: (open: boolean) => void
   resetAll: () => void
 }
 
@@ -237,13 +247,20 @@ export const useStore = create<AppState & Actions>((set, get) => ({
     })),
 
   removeRoom: (id) =>
-    set((s) => ({
-      floors: s.floors.map((f) =>
-        f.id === s.activeFloorId ? { ...f, rooms: f.rooms.filter((r) => r.id !== id) } : f,
-      ),
-      selection: null,
-      view: s.view.focusedRoomId === id ? { ...s.view, focusedRoomId: null } : s.view,
-    })),
+    set((s) => {
+      const floor = s.floors.find((f) => f.id === s.activeFloorId)
+      const room = floor?.rooms.find((r) => r.id === id)
+      return {
+        floors: s.floors.map((f) =>
+          f.id === s.activeFloorId ? { ...f, rooms: f.rooms.filter((r) => r.id !== id) } : f,
+        ),
+        selection: null,
+        view: s.view.focusedRoomId === id ? { ...s.view, focusedRoomId: null } : s.view,
+        lastDeleted: room
+          ? { kind: 'room', at: Date.now(), floorId: s.activeFloorId, room }
+          : s.lastDeleted,
+      }
+    }),
 
   addPin: (roomId, pin) => {
     const id = nanoid()
@@ -288,19 +305,27 @@ export const useStore = create<AppState & Actions>((set, get) => ({
     })),
 
   removePin: (roomId, pinId) =>
-    set((s) => ({
-      floors: s.floors.map((f) =>
-        f.id === s.activeFloorId
-          ? {
-              ...f,
-              rooms: f.rooms.map((r) =>
-                r.id === roomId ? { ...r, pins: r.pins.filter((p) => p.id !== pinId) } : r,
-              ),
-            }
-          : f,
-      ),
-      selection: null,
-    })),
+    set((s) => {
+      const floor = s.floors.find((f) => f.id === s.activeFloorId)
+      const room = floor?.rooms.find((r) => r.id === roomId)
+      const pin = room?.pins.find((p) => p.id === pinId)
+      return {
+        floors: s.floors.map((f) =>
+          f.id === s.activeFloorId
+            ? {
+                ...f,
+                rooms: f.rooms.map((r) =>
+                  r.id === roomId ? { ...r, pins: r.pins.filter((p) => p.id !== pinId) } : r,
+                ),
+              }
+            : f,
+        ),
+        selection: null,
+        lastDeleted: pin
+          ? { kind: 'pin', at: Date.now(), floorId: s.activeFloorId, roomId, pin }
+          : s.lastDeleted,
+      }
+    }),
 
   togglePinDone: (roomId, pinId) => {
     const room = get().floors.find((f) => f.id === get().activeFloorId)?.rooms.find((r) => r.id === roomId)
@@ -356,6 +381,192 @@ export const useStore = create<AppState & Actions>((set, get) => ({
         },
       }
     }),
+
+  addSubtask: (roomId, pinId, title) => {
+    const trimmed = title.trim()
+    if (!trimmed) return
+    const id = nanoid()
+    set((s) => ({
+      floors: s.floors.map((f) =>
+        f.id === s.activeFloorId
+          ? {
+              ...f,
+              rooms: f.rooms.map((r) =>
+                r.id === roomId
+                  ? {
+                      ...r,
+                      pins: r.pins.map((p) =>
+                        p.id === pinId
+                          ? {
+                              ...p,
+                              subtasks: [...(p.subtasks ?? []), { id, title: trimmed, done: false }],
+                              updatedAt: Date.now(),
+                            }
+                          : p,
+                      ),
+                    }
+                  : r,
+              ),
+            }
+          : f,
+      ),
+    }))
+  },
+
+  updateSubtask: (roomId, pinId, subtaskId, patch) =>
+    set((s) => ({
+      floors: s.floors.map((f) =>
+        f.id === s.activeFloorId
+          ? {
+              ...f,
+              rooms: f.rooms.map((r) =>
+                r.id === roomId
+                  ? {
+                      ...r,
+                      pins: r.pins.map((p) =>
+                        p.id === pinId
+                          ? {
+                              ...p,
+                              subtasks: (p.subtasks ?? []).map((st) =>
+                                st.id === subtaskId ? { ...st, ...patch } : st,
+                              ),
+                              updatedAt: Date.now(),
+                            }
+                          : p,
+                      ),
+                    }
+                  : r,
+              ),
+            }
+          : f,
+      ),
+    })),
+
+  removeSubtask: (roomId, pinId, subtaskId) =>
+    set((s) => ({
+      floors: s.floors.map((f) =>
+        f.id === s.activeFloorId
+          ? {
+              ...f,
+              rooms: f.rooms.map((r) =>
+                r.id === roomId
+                  ? {
+                      ...r,
+                      pins: r.pins.map((p) =>
+                        p.id === pinId
+                          ? {
+                              ...p,
+                              subtasks: (p.subtasks ?? []).filter((st) => st.id !== subtaskId),
+                              updatedAt: Date.now(),
+                            }
+                          : p,
+                      ),
+                    }
+                  : r,
+              ),
+            }
+          : f,
+      ),
+    })),
+
+  addLink: (roomId, pinId, url, title) => {
+    const trimmed = url.trim()
+    if (!trimmed) return
+    const normalized = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`
+    const id = nanoid()
+    set((s) => ({
+      floors: s.floors.map((f) =>
+        f.id === s.activeFloorId
+          ? {
+              ...f,
+              rooms: f.rooms.map((r) =>
+                r.id === roomId
+                  ? {
+                      ...r,
+                      pins: r.pins.map((p) =>
+                        p.id === pinId
+                          ? {
+                              ...p,
+                              links: [...(p.links ?? []), { id, url: normalized, title }],
+                              updatedAt: Date.now(),
+                            }
+                          : p,
+                      ),
+                    }
+                  : r,
+              ),
+            }
+          : f,
+      ),
+    }))
+  },
+
+  removeLink: (roomId, pinId, linkId) =>
+    set((s) => ({
+      floors: s.floors.map((f) =>
+        f.id === s.activeFloorId
+          ? {
+              ...f,
+              rooms: f.rooms.map((r) =>
+                r.id === roomId
+                  ? {
+                      ...r,
+                      pins: r.pins.map((p) =>
+                        p.id === pinId
+                          ? {
+                              ...p,
+                              links: (p.links ?? []).filter((l) => l.id !== linkId),
+                              updatedAt: Date.now(),
+                            }
+                          : p,
+                      ),
+                    }
+                  : r,
+              ),
+            }
+          : f,
+      ),
+    })),
+
+  undoDelete: () =>
+    set((s) => {
+      if (!s.lastDeleted) return s
+      const d = s.lastDeleted
+      const targetFloor = s.floors.find((f) => f.id === d.floorId)
+      if (!targetFloor) return { lastDeleted: null }
+      if (d.kind === 'pin' && d.pin && d.roomId) {
+        return {
+          floors: s.floors.map((f) =>
+            f.id === d.floorId
+              ? {
+                  ...f,
+                  rooms: f.rooms.map((r) =>
+                    r.id === d.roomId ? { ...r, pins: [...r.pins, d.pin!] } : r,
+                  ),
+                }
+              : f,
+          ),
+          lastDeleted: null,
+          selection: { kind: 'pin', roomId: d.roomId, pinId: d.pin.id },
+          activeFloorId: d.floorId,
+        }
+      }
+      if (d.kind === 'room' && d.room) {
+        return {
+          floors: s.floors.map((f) =>
+            f.id === d.floorId ? { ...f, rooms: [...f.rooms, d.room!] } : f,
+          ),
+          lastDeleted: null,
+          selection: { kind: 'room', roomId: d.room.id },
+          activeFloorId: d.floorId,
+        }
+      }
+      return { lastDeleted: null }
+    }),
+
+  clearLastDeleted: () => set({ lastDeleted: null }),
+
+  setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
 
   resetAll: () => set({ ...buildInitial(), floors: seedFloors(), activeFloorId: '' }),
 }))

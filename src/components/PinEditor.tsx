@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Pin, Category, Priority } from '../store/types'
 import {
   CATEGORY_COLOR,
@@ -29,7 +29,18 @@ export const PinEditor = ({ roomId, pin }: Props) => {
   const updatePin = useStore((s) => s.updatePin)
   const removePin = useStore((s) => s.removePin)
   const togglePinDone = useStore((s) => s.togglePinDone)
+  const addSubtask = useStore((s) => s.addSubtask)
+  const updateSubtask = useStore((s) => s.updateSubtask)
+  const removeSubtask = useStore((s) => s.removeSubtask)
+  const addLink = useStore((s) => s.addLink)
+  const removeLink = useStore((s) => s.removeLink)
   const titleRef = useRef<HTMLInputElement>(null)
+  const [newSubtask, setNewSubtask] = useState('')
+  const [newLink, setNewLink] = useState('')
+
+  const subtasks = pin.subtasks ?? []
+  const links = pin.links ?? []
+  const subtasksDone = subtasks.filter((s) => s.done).length
 
   useEffect(() => {
     if (pin.title === 'New todo') titleRef.current?.select()
@@ -169,6 +180,139 @@ export const PinEditor = ({ roomId, pin }: Props) => {
             />
           </div>
         </label>
+      </div>
+
+      {/* Subtasks */}
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <div className="text-xs font-medium text-gray-500">
+            Subtasks {subtasks.length > 0 && `(${subtasksDone}/${subtasks.length})`}
+          </div>
+          {subtasks.length > 0 && (
+            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full bg-emerald-500"
+                style={{ width: `${(subtasksDone / subtasks.length) * 100}%` }}
+              />
+            </div>
+          )}
+        </div>
+        {subtasks.length > 0 && (
+          <div className="mb-1 flex flex-col">
+            {subtasks.map((st) => (
+              <div
+                key={st.id}
+                className="group flex items-center gap-2 rounded-md px-1 py-1 hover:bg-blueprint-line/30"
+              >
+                <input
+                  type="checkbox"
+                  checked={st.done}
+                  onChange={(e) =>
+                    updateSubtask(roomId, pin.id, st.id, { done: e.target.checked })
+                  }
+                />
+                <input
+                  value={st.title}
+                  onChange={(e) =>
+                    updateSubtask(roomId, pin.id, st.id, { title: e.target.value })
+                  }
+                  className={`flex-1 bg-transparent text-xs outline-none ${
+                    st.done ? 'text-gray-400 line-through' : 'text-gray-700'
+                  }`}
+                />
+                <button
+                  onClick={() => removeSubtask(roomId, pin.id, st.id)}
+                  className="rounded p-0.5 text-gray-300 opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                  title="Delete subtask"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M6 6l12 12M6 18L18 6" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            addSubtask(roomId, pin.id, newSubtask)
+            setNewSubtask('')
+          }}
+          className="flex items-center gap-1"
+        >
+          <input
+            value={newSubtask}
+            onChange={(e) => setNewSubtask(e.target.value)}
+            placeholder="+ Add step"
+            className="flex-1 rounded-md border border-blueprint-line bg-white px-2 py-1 text-xs outline-none focus:border-blueprint-accent"
+          />
+        </form>
+      </div>
+
+      {/* Reference links */}
+      <div>
+        <div className="mb-1 text-xs font-medium text-gray-500">
+          References {links.length > 0 && `(${links.length})`}
+        </div>
+        {links.length > 0 && (
+          <div className="mb-1 flex flex-col gap-1">
+            {links.map((l) => {
+              let host = ''
+              try {
+                host = new URL(l.url).hostname.replace('www.', '')
+              } catch {
+                host = l.url
+              }
+              return (
+                <div
+                  key={l.id}
+                  className="group flex items-center gap-2 rounded-md border border-blueprint-line bg-white px-2 py-1.5 text-xs hover:border-blueprint-accent"
+                >
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${host}&sz=32`}
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="rounded-sm"
+                  />
+                  <a
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 truncate text-gray-700 hover:text-blueprint-accent"
+                  >
+                    {l.title || host}
+                  </a>
+                  <button
+                    onClick={() => removeLink(roomId, pin.id, l.id)}
+                    className="rounded p-0.5 text-gray-300 opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                    title="Remove link"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M6 6l12 12M6 18L18 6" />
+                    </svg>
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            addLink(roomId, pin.id, newLink)
+            setNewLink('')
+          }}
+          className="flex items-center gap-1"
+        >
+          <input
+            value={newLink}
+            onChange={(e) => setNewLink(e.target.value)}
+            placeholder="+ Paste a YouTube / Pinterest / IKEA link"
+            className="flex-1 rounded-md border border-blueprint-line bg-white px-2 py-1 text-xs outline-none focus:border-blueprint-accent"
+          />
+        </form>
       </div>
 
       <div>

@@ -295,9 +295,29 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
             listening={false}
           />
         )}
+        {(pin.subtasks?.length ?? 0) > 0 && (
+          <Text
+            x={-W / 2 + 58}
+            y={2}
+            text={`☐ ${(pin.subtasks ?? []).filter((s) => s.done).length}/${pin.subtasks!.length}`}
+            fontSize={10}
+            fill="#6b7280"
+            listening={false}
+          />
+        )}
+        {(pin.links?.length ?? 0) > 0 && (
+          <Text
+            x={-W / 2 + 100}
+            y={2}
+            text={`🔗 ${pin.links!.length}`}
+            fontSize={10}
+            fill="#6b7280"
+            listening={false}
+          />
+        )}
         {pin.photos.length > 0 && (
           <Text
-            x={-W / 2 + 60}
+            x={-W / 2 + 124}
             y={2}
             text={`📷 ${pin.photos.length}`}
             fontSize={10}
