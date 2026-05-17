@@ -10,12 +10,11 @@ interface GridProps {
 }
 
 /**
- * Renders a soft blueprint grid. We compute visible lines in world space
- * so the grid stays crisp when zoomed/panned.
+ * Renders a soft blueprint grid. Lines are computed in world space so they
+ * stay crisp under pan/zoom.
  */
 export const Grid = ({ width, height, scale, offsetX, offsetY }: GridProps) => {
   const step = GRID_SIZE
-  // World bounds visible on screen
   const left = -offsetX / scale
   const top = -offsetY / scale
   const right = left + width / scale
@@ -32,7 +31,7 @@ export const Grid = ({ width, height, scale, offsetX, offsetY }: GridProps) => {
       <Line
         key={`v-${i++}`}
         points={[x, top, x, bottom]}
-        stroke={major ? '#cfc7b3' : '#e6e0d0'}
+        stroke={major ? '#e0e0dc' : '#efefea'}
         strokeWidth={major ? 1 : 0.5}
         listening={false}
       />,
@@ -44,7 +43,7 @@ export const Grid = ({ width, height, scale, offsetX, offsetY }: GridProps) => {
       <Line
         key={`h-${i++}`}
         points={[left, y, right, y]}
-        stroke={major ? '#cfc7b3' : '#e6e0d0'}
+        stroke={major ? '#e0e0dc' : '#efefea'}
         strokeWidth={major ? 1 : 0.5}
         listening={false}
       />,

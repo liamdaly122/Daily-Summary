@@ -8,14 +8,15 @@ interface Props {
   defaultX: number
   defaultY: number
   width?: number
-  /** Render a smaller pinned variant when collapsed; defaults to icon-only button. */
+  defaultCollapsed?: boolean
+  /** Only render when truthy. Lets us hide context panels (e.g. Sidebar without selection). */
+  visible?: boolean
   children: React.ReactNode
-  /** Optional right-side header content (e.g. extra buttons). */
   headerExtra?: React.ReactNode
 }
 
 /**
- * A draggable, collapsible panel. Drag the header bar to move it; click the
+ * Draggable, collapsible panel. Drag the header bar to move; click the
  * chevron (or the icon when collapsed) to toggle. Position + collapsed state
  * persist via the Zustand store.
  */
@@ -26,6 +27,8 @@ export const FloatingPanel = ({
   defaultX,
   defaultY,
   width = 320,
+  defaultCollapsed = false,
+  visible = true,
   children,
   headerExtra,
 }: Props) => {
@@ -33,15 +36,14 @@ export const FloatingPanel = ({
   const movePanel = useStore((s) => s.movePanel)
   const toggleCollapsed = useStore((s) => s.togglePanelCollapsed)
 
-  // Effective position (falls back to defaults until user moves/collapses it)
   const x = panel?.x ?? defaultX
   const y = panel?.y ?? defaultY
-  const collapsed = panel?.collapsed ?? false
+  const collapsed = panel?.collapsed ?? defaultCollapsed
 
-  const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
+  const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
 
-  // Clean up listeners if unmounted mid-drag
+  // Cleanup listeners if unmounted mid-drag
   useEffect(() => {
     return () => {
       if (dragRef.current) {
@@ -58,43 +60,46 @@ export const FloatingPanel = ({
     if (!dragRef.current) return
     const dx = ev.clientX - dragRef.current.sx
     const dy = ev.clientY - dragRef.current.sy
-    const w = collapsed ? 44 : width
-    const h = collapsed ? 44 : 200 // approx
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragRef.current.moved = true
+    const w = collapsed ? 40 : width
+    const h = collapsed ? 40 : 240
     const nx = clamp(dragRef.current.ox + dx, window.innerWidth - w - 8)
     const ny = clamp(dragRef.current.oy + dy, window.innerHeight - h - 8)
     movePanel(id, nx, ny)
   }
 
   const onUp = () => {
-    dragRef.current = null
     setDragging(false)
     window.removeEventListener('pointermove', onMove)
     window.removeEventListener('pointerup', onUp)
+    // Defer clearing dragRef so the click handler can read .moved
+    setTimeout(() => {
+      dragRef.current = null
+    }, 0)
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
-    // Ignore drags that start on buttons inside the header
-    if ((e.target as HTMLElement).closest('button[data-no-drag]')) return
+    if ((e.target as HTMLElement).closest('button[data-no-drag], input, textarea')) return
     e.preventDefault()
-    dragRef.current = { sx: e.clientX, sy: e.clientY, ox: x, oy: y }
+    dragRef.current = { sx: e.clientX, sy: e.clientY, ox: x, oy: y, moved: false }
     setDragging(true)
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
   }
 
+  if (!visible) return null
+
   if (collapsed) {
     return (
       <button
-        title={`Open ${title}`}
+        title={title}
         onPointerDown={onPointerDown}
-        onClick={(e) => {
-          // Don't expand if the user just dragged
-          if (Math.abs((dragRef.current?.ox ?? x) - x) > 2 || Math.abs((dragRef.current?.oy ?? y) - y) > 2) return
-          e.stopPropagation()
+        onClick={() => {
+          if (dragRef.current?.moved) return
           toggleCollapsed(id, { x: defaultX, y: defaultY })
         }}
         style={{ left: x, top: y, touchAction: 'none' }}
-        className={`pointer-events-auto absolute z-30 flex h-11 w-11 items-center justify-center rounded-xl border border-blueprint-line bg-white/95 text-lg shadow-pop backdrop-blur transition-shadow hover:shadow-card ${
+        className={`pointer-events-auto panel-in absolute z-30 flex h-10 w-10 items-center justify-center rounded-xl border border-canvas-line bg-white text-base shadow-card transition-all hover:shadow-pop ${
           dragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >
@@ -106,26 +111,24 @@ export const FloatingPanel = ({
   return (
     <div
       style={{ left: x, top: y, width, touchAction: 'none' }}
-      className="pointer-events-auto absolute z-30 flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl border border-blueprint-line bg-white/95 shadow-pop backdrop-blur"
+      className="pointer-events-auto panel-in absolute z-30 flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-canvas-line bg-white/95 shadow-pop backdrop-blur"
     >
       <div
         onPointerDown={onPointerDown}
-        className={`flex items-center gap-2 border-b border-blueprint-line/60 px-3 py-2 ${
+        className={`flex items-center gap-2 border-b border-canvas-hairline px-3 py-2 ${
           dragging ? 'cursor-grabbing' : 'cursor-grab'
         } select-none`}
       >
-        <span className="text-base">{icon}</span>
-        <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          {title}
-        </span>
+        <span className="text-sm leading-none">{icon}</span>
+        <span className="flex-1 truncate text-[13px] font-semibold text-ink">{title}</span>
         {headerExtra}
         <button
           data-no-drag
           title="Collapse"
           onClick={() => toggleCollapsed(id, { x: defaultX, y: defaultY })}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          className="rounded-md p-1 text-ink-faint hover:bg-canvas-hairline hover:text-ink-muted"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M6 9l6 6 6-6" />
           </svg>
         </button>

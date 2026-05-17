@@ -18,7 +18,6 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
-      // Don't intercept typing in inputs
       if (
         target &&
         (target.tagName === 'INPUT' ||
@@ -55,8 +54,28 @@ export default function App() {
   }, [])
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-blueprint-bg">
+    <div className="relative h-full w-full overflow-hidden bg-canvas-bg">
       {focusedRoom ? <RoomCanvas room={focusedRoom} /> : <BlueprintCanvas />}
+
+      {/* Top-center title chip */}
+      <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 text-center">
+        <div className="rounded-full bg-white/70 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted shadow-soft backdrop-blur">
+          HouseDIY{focusedRoom ? ` · ${focusedRoom.name}` : ''}
+        </div>
+      </div>
+
+      {/* Top-right action bar */}
+      <button
+        onClick={() => useStore.getState().setCommandPaletteOpen(true)}
+        title="Search (⌘K)"
+        className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-xl border border-canvas-line bg-white text-ink-muted shadow-card transition-all hover:text-accent hover:shadow-pop"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4-4" />
+        </svg>
+      </button>
+
       <FloorSwitcher />
       <Sidebar />
       <AllTodos />
@@ -64,23 +83,6 @@ export default function App() {
       <ZoomBadge />
       <UndoToast />
       <CommandPalette />
-      <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 text-center">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-          HouseDIY{focusedRoom ? ` · ${focusedRoom.name}` : ''}
-        </div>
-      </div>
-      <button
-        onClick={() => useStore.getState().setCommandPaletteOpen(true)}
-        title="Search (⌘K)"
-        className="absolute right-4 top-4 z-20 flex items-center gap-2 rounded-xl border border-blueprint-line bg-white/95 px-3 py-1.5 text-xs text-gray-500 shadow-card backdrop-blur hover:text-blueprint-accent"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4-4" />
-        </svg>
-        Search
-        <kbd className="rounded border border-gray-200 bg-gray-50 px-1 py-0.5 text-[9px]">⌘K</kbd>
-      </button>
     </div>
   )
 }

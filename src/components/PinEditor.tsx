@@ -22,8 +22,13 @@ const CATEGORIES: Category[] = [
   'decor',
   'furniture',
 ]
-
 const PRIORITIES: Priority[] = ['low', 'med', 'high', 'urgent']
+
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">
+    {children}
+  </div>
+)
 
 export const PinEditor = ({ roomId, pin }: Props) => {
   const updatePin = useStore((s) => s.updatePin)
@@ -61,33 +66,29 @@ export const PinEditor = ({ roomId, pin }: Props) => {
   }
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-auto p-4 scroll-thin">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          Todo pin
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => togglePinDone(roomId, pin.id)}
-            className={`rounded-md px-2 py-1 text-xs font-medium ${
-              pin.done
-                ? 'bg-emerald-500 text-white'
-                : 'border border-gray-300 text-gray-600 hover:border-gray-400'
-            }`}
-          >
-            {pin.done ? '✓ Done' : 'Mark done'}
-          </button>
-          <button
-            onClick={() => removePin(roomId, pin.id)}
-            title="Delete pin (or press Delete)"
-            className="flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-500 hover:border-red-400 hover:bg-red-50"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
-            </svg>
-            Delete
-          </button>
-        </div>
+    <div className="flex h-full flex-col gap-4 overflow-auto px-4 py-3 scroll-thin">
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => togglePinDone(roomId, pin.id)}
+          className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors ${
+            pin.done
+              ? 'bg-emerald-500 text-white'
+              : 'border border-canvas-line text-ink-muted hover:border-ink-faint hover:text-ink'
+          }`}
+        >
+          {pin.done ? '✓ Done' : 'Mark done'}
+        </button>
+        <div className="ml-auto" />
+        <button
+          onClick={() => removePin(roomId, pin.id)}
+          title="Delete pin (Delete key)"
+          className="btn btn-danger"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+          </svg>
+          Delete
+        </button>
       </div>
 
       <input
@@ -95,28 +96,28 @@ export const PinEditor = ({ roomId, pin }: Props) => {
         value={pin.title}
         onChange={(e) => updatePin(roomId, pin.id, { title: e.target.value })}
         placeholder="Title"
-        className="w-full rounded-lg border border-blueprint-line bg-white px-3 py-2 text-base font-semibold outline-none focus:border-blueprint-accent"
+        className="w-full rounded-lg border border-canvas-line bg-white px-3 py-2 text-[15px] font-semibold outline-none transition-colors focus:border-accent focus:shadow-ring"
       />
 
       <textarea
         value={pin.description}
         onChange={(e) => updatePin(roomId, pin.id, { description: e.target.value })}
         placeholder="Notes, dimensions, materials…"
-        rows={4}
-        className="w-full resize-none rounded-lg border border-blueprint-line bg-white px-3 py-2 text-sm outline-none focus:border-blueprint-accent"
+        rows={3}
+        className="w-full resize-none rounded-lg border border-canvas-line bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-accent focus:shadow-ring"
       />
 
       <div>
-        <div className="mb-1 text-xs font-medium text-gray-500">Category</div>
-        <div className="flex flex-wrap gap-1.5">
+        <SectionLabel>Category</SectionLabel>
+        <div className="flex flex-wrap gap-1">
           {CATEGORIES.map((c) => (
             <button
               key={c}
               onClick={() => updatePin(roomId, pin.id, { category: c })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
                 pin.category === c
-                  ? 'text-white shadow-card'
-                  : 'border border-gray-200 text-gray-600 hover:border-gray-300'
+                  ? 'text-white shadow-soft'
+                  : 'border border-canvas-line text-ink-muted hover:border-ink-faint'
               }`}
               style={{ backgroundColor: pin.category === c ? CATEGORY_COLOR[c] : undefined }}
             >
@@ -127,16 +128,16 @@ export const PinEditor = ({ roomId, pin }: Props) => {
       </div>
 
       <div>
-        <div className="mb-1 text-xs font-medium text-gray-500">Priority</div>
-        <div className="flex gap-1.5">
+        <SectionLabel>Priority</SectionLabel>
+        <div className="flex gap-1">
           {PRIORITIES.map((p) => (
             <button
               key={p}
               onClick={() => updatePin(roomId, pin.id, { priority: p })}
-              className={`flex-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-all ${
+              className={`flex-1 rounded-md border px-2 py-1.5 text-[11px] font-medium transition-all ${
                 pin.priority === p
                   ? 'text-white'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  : 'border-canvas-line bg-white text-ink-muted hover:border-ink-faint'
               }`}
               style={{
                 backgroundColor: pin.priority === p ? PRIORITY_COLOR[p] : undefined,
@@ -151,9 +152,9 @@ export const PinEditor = ({ roomId, pin }: Props) => {
 
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
-          <div className="mb-1 text-xs font-medium text-gray-500">Est. cost</div>
-          <div className="flex items-center rounded-lg border border-blueprint-line bg-white px-2 focus-within:border-blueprint-accent">
-            <span className="text-sm text-gray-400">£</span>
+          <SectionLabel>Est. cost</SectionLabel>
+          <div className="flex items-center rounded-lg border border-canvas-line bg-white px-2 focus-within:border-accent focus-within:shadow-ring">
+            <span className="text-sm text-ink-faint">£</span>
             <input
               type="number"
               min={0}
@@ -166,9 +167,9 @@ export const PinEditor = ({ roomId, pin }: Props) => {
           </div>
         </label>
         <label className="block">
-          <div className="mb-1 text-xs font-medium text-gray-500">Actual cost</div>
-          <div className="flex items-center rounded-lg border border-blueprint-line bg-white px-2 focus-within:border-blueprint-accent">
-            <span className="text-sm text-gray-400">£</span>
+          <SectionLabel>Actual cost</SectionLabel>
+          <div className="flex items-center rounded-lg border border-canvas-line bg-white px-2 focus-within:border-accent focus-within:shadow-ring">
+            <span className="text-sm text-ink-faint">£</span>
             <input
               type="number"
               min={0}
@@ -182,27 +183,26 @@ export const PinEditor = ({ roomId, pin }: Props) => {
         </label>
       </div>
 
-      {/* Subtasks */}
       <div>
-        <div className="mb-1 flex items-center justify-between">
-          <div className="text-xs font-medium text-gray-500">
-            Subtasks {subtasks.length > 0 && `(${subtasksDone}/${subtasks.length})`}
-          </div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <SectionLabel>
+            Subtasks {subtasks.length > 0 && `· ${subtasksDone}/${subtasks.length}`}
+          </SectionLabel>
           {subtasks.length > 0 && (
-            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-100">
+            <div className="h-1 w-16 overflow-hidden rounded-full bg-canvas-hairline">
               <div
-                className="h-full bg-emerald-500"
+                className="h-full bg-emerald-500 transition-all"
                 style={{ width: `${(subtasksDone / subtasks.length) * 100}%` }}
               />
             </div>
           )}
         </div>
         {subtasks.length > 0 && (
-          <div className="mb-1 flex flex-col">
+          <div className="mb-1.5 flex flex-col">
             {subtasks.map((st) => (
               <div
                 key={st.id}
-                className="group flex items-center gap-2 rounded-md px-1 py-1 hover:bg-blueprint-line/30"
+                className="group flex items-center gap-2 rounded-md px-1 py-1 hover:bg-canvas-hairline"
               >
                 <input
                   type="checkbox"
@@ -216,14 +216,14 @@ export const PinEditor = ({ roomId, pin }: Props) => {
                   onChange={(e) =>
                     updateSubtask(roomId, pin.id, st.id, { title: e.target.value })
                   }
-                  className={`flex-1 bg-transparent text-xs outline-none ${
-                    st.done ? 'text-gray-400 line-through' : 'text-gray-700'
+                  className={`flex-1 bg-transparent text-[13px] outline-none ${
+                    st.done ? 'text-ink-faint line-through' : 'text-ink'
                   }`}
                 />
                 <button
                   onClick={() => removeSubtask(roomId, pin.id, st.id)}
-                  className="rounded p-0.5 text-gray-300 opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                  title="Delete subtask"
+                  className="rounded p-0.5 text-ink-faint opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                  title="Delete step"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <path d="M6 6l12 12M6 18L18 6" />
@@ -239,24 +239,22 @@ export const PinEditor = ({ roomId, pin }: Props) => {
             addSubtask(roomId, pin.id, newSubtask)
             setNewSubtask('')
           }}
-          className="flex items-center gap-1"
         >
           <input
             value={newSubtask}
             onChange={(e) => setNewSubtask(e.target.value)}
             placeholder="+ Add step"
-            className="flex-1 rounded-md border border-blueprint-line bg-white px-2 py-1 text-xs outline-none focus:border-blueprint-accent"
+            className="w-full rounded-md border border-canvas-line bg-white px-2 py-1.5 text-[13px] outline-none focus:border-accent focus:shadow-ring"
           />
         </form>
       </div>
 
-      {/* Reference links */}
       <div>
-        <div className="mb-1 text-xs font-medium text-gray-500">
-          References {links.length > 0 && `(${links.length})`}
-        </div>
+        <SectionLabel>
+          References {links.length > 0 && `· ${links.length}`}
+        </SectionLabel>
         {links.length > 0 && (
-          <div className="mb-1 flex flex-col gap-1">
+          <div className="mb-1.5 flex flex-col gap-1">
             {links.map((l) => {
               let host = ''
               try {
@@ -267,11 +265,11 @@ export const PinEditor = ({ roomId, pin }: Props) => {
               return (
                 <div
                   key={l.id}
-                  className="group flex items-center gap-2 rounded-md border border-blueprint-line bg-white px-2 py-1.5 text-xs hover:border-blueprint-accent"
+                  className="group flex items-center gap-2 rounded-md border border-canvas-line bg-white px-2 py-1.5 text-[13px] hover:border-accent"
                 >
                   <img
                     src={`https://www.google.com/s2/favicons?domain=${host}&sz=32`}
-                    alt=""
+                    alt={`${host} favicon`}
                     width={16}
                     height={16}
                     className="rounded-sm"
@@ -280,13 +278,13 @@ export const PinEditor = ({ roomId, pin }: Props) => {
                     href={l.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 truncate text-gray-700 hover:text-blueprint-accent"
+                    className="flex-1 truncate text-ink hover:text-accent"
                   >
                     {l.title || host}
                   </a>
                   <button
                     onClick={() => removeLink(roomId, pin.id, l.id)}
-                    className="rounded p-0.5 text-gray-300 opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                    className="rounded p-0.5 text-ink-faint opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
                     title="Remove link"
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -304,23 +302,20 @@ export const PinEditor = ({ roomId, pin }: Props) => {
             addLink(roomId, pin.id, newLink)
             setNewLink('')
           }}
-          className="flex items-center gap-1"
         >
           <input
             value={newLink}
             onChange={(e) => setNewLink(e.target.value)}
-            placeholder="+ Paste a YouTube / Pinterest / IKEA link"
-            className="flex-1 rounded-md border border-blueprint-line bg-white px-2 py-1 text-xs outline-none focus:border-blueprint-accent"
+            placeholder="Paste a YouTube / Pinterest / IKEA link"
+            className="w-full rounded-md border border-canvas-line bg-white px-2 py-1.5 text-[13px] outline-none focus:border-accent focus:shadow-ring"
           />
         </form>
       </div>
 
       <div>
-        <div className="mb-1 flex items-center justify-between">
-          <div className="text-xs font-medium text-gray-500">
-            Photos ({pin.photos.length})
-          </div>
-          <label className="cursor-pointer text-xs font-medium text-blueprint-accent hover:underline">
+        <div className="mb-1.5 flex items-center justify-between">
+          <SectionLabel>Photos {pin.photos.length > 0 && `· ${pin.photos.length}`}</SectionLabel>
+          <label className="cursor-pointer text-[11px] font-semibold text-accent hover:underline">
             + Add
             <input
               type="file"
@@ -337,8 +332,8 @@ export const PinEditor = ({ roomId, pin }: Props) => {
               <div key={i} className="group relative">
                 <img
                   src={src}
-                  alt={`photo ${i + 1}`}
-                  className="h-24 w-full rounded-lg object-cover"
+                  alt={`Pin photo ${i + 1}`}
+                  className="h-24 w-full rounded-lg object-cover ring-1 ring-canvas-line"
                 />
                 <button
                   onClick={() =>
@@ -346,7 +341,7 @@ export const PinEditor = ({ roomId, pin }: Props) => {
                       photos: pin.photos.filter((_, j) => j !== i),
                     })
                   }
-                  className="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white group-hover:flex"
+                  className="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-ink/70 text-xs text-white group-hover:flex"
                 >
                   ✕
                 </button>
@@ -354,13 +349,13 @@ export const PinEditor = ({ roomId, pin }: Props) => {
             ))}
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-blueprint-line p-4 text-center text-xs text-gray-400">
-            Snap a "before" photo to attach
+          <div className="rounded-lg border border-dashed border-canvas-line p-4 text-center text-[11px] text-ink-faint">
+            Drop a “before” photo here later
           </div>
         )}
       </div>
 
-      <div className="mt-auto pt-2 text-[10px] text-gray-400">
+      <div className="mt-auto pt-1 text-[10px] text-ink-faint">
         Created {new Date(pin.createdAt).toLocaleDateString()} · Updated{' '}
         {new Date(pin.updatedAt).toLocaleDateString()}
       </div>

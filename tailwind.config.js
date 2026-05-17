@@ -4,11 +4,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        blueprint: {
-          bg: '#f7f5ef',
-          line: '#d8d2c2',
-          ink: '#2a2a2a',
-          accent: '#3b82f6',
+        canvas: {
+          bg: '#fbfaf7',
+          line: '#ececec',
+          hairline: '#f1f1ef',
+        },
+        ink: {
+          DEFAULT: '#0f172a',
+          muted: '#64748b',
+          subtle: '#94a3b8',
+          faint: '#cbd5e1',
+        },
+        accent: {
+          DEFAULT: '#2563eb',
+          soft: '#dbeafe',
+          ring: 'rgba(37, 99, 235, 0.18)',
         },
         cat: {
           plumbing: '#3b82f6',
@@ -24,8 +34,13 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        card: '0 2px 8px rgba(20, 20, 20, 0.08), 0 1px 2px rgba(20, 20, 20, 0.04)',
-        pop: '0 8px 24px rgba(20, 20, 20, 0.12), 0 2px 6px rgba(20, 20, 20, 0.06)',
+        soft: '0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.02)',
+        card: '0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04)',
+        pop: '0 8px 28px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05)',
+        ring: '0 0 0 3px rgba(37, 99, 235, 0.18)',
+      },
+      transitionTimingFunction: {
+        snappy: 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
     },
   },

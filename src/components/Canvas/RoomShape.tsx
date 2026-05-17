@@ -25,7 +25,7 @@ interface Props {
   onChange: (patch: Partial<Room>) => void
 }
 
-const HANDLE = 10
+const HANDLE = 9
 const MIN = 40
 
 export const RoomShape = ({
@@ -45,7 +45,7 @@ export const RoomShape = ({
   const heatmapColor = (() => {
     if (!showHeatmap || totalPins === 0) return null
     const hue = 0 + progress * 130 // red→green
-    return `hsla(${hue}, 70%, 60%, 0.25)`
+    return `hsla(${hue}, 60%, 60%, 0.18)`
   })()
 
   const handleGroupDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -59,7 +59,6 @@ export const RoomShape = ({
     (corner: 'nw' | 'ne' | 'sw' | 'se') =>
     (e: Konva.KonvaEventObject<DragEvent>) => {
       e.cancelBubble = true
-      // Handle top-left + HANDLE/2 = corner position in room-local space
       const lx = snap(e.target.x() + HANDLE / 2)
       const ly = snap(e.target.y() + HANDLE / 2)
       let { x, y, width, height } = room
@@ -85,7 +84,6 @@ export const RoomShape = ({
         height = newHeight
       }
       onChange({ x, y, width, height })
-      // Snap handle visually back into place before React rerenders
       e.target.position({
         x: (corner.endsWith('e') ? width : 0) - HANDLE / 2,
         y: (corner.startsWith('s') ? height : 0) - HANDLE / 2,
@@ -119,13 +117,13 @@ export const RoomShape = ({
         width={room.width}
         height={room.height}
         fill={room.color || fill}
-        stroke={selected ? '#3b82f6' : '#2a2a2a'}
-        strokeWidth={selected ? 2.5 : 1.5}
+        stroke={selected ? '#2563eb' : '#cbd5e1'}
+        strokeWidth={selected ? 2 : 1}
         cornerRadius={2}
         shadowEnabled={selected}
-        shadowColor="#3b82f6"
-        shadowBlur={selected ? 12 : 0}
-        shadowOpacity={0.25}
+        shadowColor="#2563eb"
+        shadowBlur={selected ? 10 : 0}
+        shadowOpacity={0.2}
       />
 
       {heatmapColor && (
@@ -138,26 +136,29 @@ export const RoomShape = ({
         />
       )}
 
-      <Text
-        x={0}
-        y={-18}
-        width={room.width}
-        align="center"
-        text={formatMeters(unitsToMeters(room.width))}
-        fontSize={11}
-        fill="#6b7280"
-        listening={false}
-      />
-      <Text
-        x={-50}
-        y={room.height / 2 - 6}
-        width={40}
-        align="right"
-        text={formatMeters(unitsToMeters(room.height))}
-        fontSize={11}
-        fill="#6b7280"
-        listening={false}
-      />
+      {/* dimension labels — only when selected to reduce clutter */}
+      {selected && (
+        <Group listening={false}>
+          <Text
+            x={0}
+            y={-16}
+            width={room.width}
+            align="center"
+            text={formatMeters(unitsToMeters(room.width))}
+            fontSize={10}
+            fill="#64748b"
+          />
+          <Text
+            x={-52}
+            y={room.height / 2 - 6}
+            width={44}
+            align="right"
+            text={formatMeters(unitsToMeters(room.height))}
+            fontSize={10}
+            fill="#64748b"
+          />
+        </Group>
+      )}
 
       <Group listening={false}>
         <Text
@@ -165,23 +166,23 @@ export const RoomShape = ({
           y={10}
           text={`${ROOM_TYPE_ICON[room.type]}  ${room.name}`}
           fontStyle="600"
-          fontSize={14}
-          fill="#1f2937"
+          fontSize={13}
+          fill="#0f172a"
         />
         <Text
           x={10}
-          y={28}
+          y={26}
           text={`${ROOM_TYPE_LABEL[room.type]} · ${formatArea(areaMeters(room))}`}
-          fontSize={11}
-          fill="#6b7280"
+          fontSize={10}
+          fill="#94a3b8"
         />
         {totalPins > 0 && (
           <Text
             x={10}
-            y={room.height - 22}
-            text={`✓ ${donePins} / ${totalPins} todos`}
-            fontSize={11}
-            fill={progress === 1 ? '#10b981' : '#3b82f6'}
+            y={room.height - 20}
+            text={`✓ ${donePins} / ${totalPins}`}
+            fontSize={10}
+            fill={progress === 1 ? '#10b981' : '#2563eb'}
             fontStyle="600"
           />
         )}
@@ -196,7 +197,7 @@ export const RoomShape = ({
                 <Line
                   key={i}
                   points={[8, y, room.width - 8, y]}
-                  stroke="#9ca3af"
+                  stroke="#cbd5e1"
                   strokeWidth={1}
                   dash={[2, 2]}
                 />
@@ -210,7 +211,7 @@ export const RoomShape = ({
             align="center"
             text="UP"
             fontSize={10}
-            fill="#6b7280"
+            fill="#94a3b8"
             fontStyle="600"
           />
         </Group>
@@ -233,8 +234,9 @@ export const RoomShape = ({
               width={HANDLE}
               height={HANDLE}
               fill="#ffffff"
-              stroke="#3b82f6"
+              stroke="#2563eb"
               strokeWidth={1.5}
+              cornerRadius={2}
               draggable
               onMouseDown={(e) => (e.cancelBubble = true)}
               onTouchStart={(e) => (e.cancelBubble = true)}

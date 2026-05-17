@@ -37,7 +37,6 @@ export const CommandPalette = () => {
 
   const items: Item[] = useMemo(() => {
     const result: Item[] = []
-
     for (const floor of floors) {
       result.push({
         id: `floor-${floor.id}`,
@@ -73,7 +72,6 @@ export const CommandPalette = () => {
         }
       }
     }
-
     result.push(
       {
         id: 'cmd-toggle-grid',
@@ -96,7 +94,6 @@ export const CommandPalette = () => {
         onSelect: addFloor,
       },
     )
-
     return result
   }, [floors, setActiveFloor, focusRoom, setSelection, toggleGrid, toggleHeatmap, addFloor])
 
@@ -139,7 +136,6 @@ export const CommandPalette = () => {
     return () => window.removeEventListener('keydown', onKey)
   }, [open, matches, idx, setOpen])
 
-  // Keep active row in view
   useEffect(() => {
     const el = listRef.current?.querySelector<HTMLDivElement>(`[data-idx="${idx}"]`)
     el?.scrollIntoView({ block: 'nearest' })
@@ -149,15 +145,15 @@ export const CommandPalette = () => {
 
   return (
     <div
-      className="absolute inset-0 z-50 flex items-start justify-center bg-black/30 backdrop-blur-sm"
+      className="absolute inset-0 z-50 flex items-start justify-center bg-ink/30 backdrop-blur-sm"
       onClick={() => setOpen(false)}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="mt-[12vh] flex w-[560px] max-w-[90vw] flex-col overflow-hidden rounded-2xl border border-blueprint-line bg-white shadow-pop"
+        className="panel-in mt-[12vh] flex w-[560px] max-w-[90vw] flex-col overflow-hidden rounded-xl border border-canvas-line bg-white shadow-pop"
       >
-        <div className="flex items-center gap-2 border-b border-blueprint-line/60 px-3 py-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
+        <div className="flex items-center gap-2 border-b border-canvas-hairline px-3 py-2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint">
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4-4" />
           </svg>
@@ -166,13 +162,13 @@ export const CommandPalette = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search rooms, todos, commands…"
-            className="flex-1 bg-transparent text-sm outline-none"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-ink-faint"
           />
-          <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] text-gray-500">esc</kbd>
+          <kbd className="rounded border border-canvas-line bg-canvas-hairline px-1.5 py-0.5 text-[10px] text-ink-muted">esc</kbd>
         </div>
         <div ref={listRef} className="max-h-[50vh] overflow-auto scroll-thin">
           {matches.length === 0 && (
-            <div className="p-6 text-center text-sm text-gray-400">No matches</div>
+            <div className="p-6 text-center text-sm text-ink-faint">No matches</div>
           )}
           {matches.map((it, i) => (
             <div
@@ -185,7 +181,7 @@ export const CommandPalette = () => {
               onMouseEnter={() => setIdx(i)}
               className={`flex cursor-pointer items-center gap-3 border-l-2 px-3 py-2 text-sm ${
                 idx === i
-                  ? 'border-blueprint-accent bg-blueprint-accent/5'
+                  ? 'border-accent bg-accent/5'
                   : 'border-transparent'
               }`}
             >
@@ -196,25 +192,25 @@ export const CommandPalette = () => {
                     it.kind === 'pin'
                       ? it.color
                       : it.kind === 'room'
-                      ? '#e5e7eb'
+                      ? '#f1f5f9'
                       : it.kind === 'floor'
                       ? '#dbeafe'
                       : '#fef3c7',
-                  color: it.kind === 'pin' ? 'white' : '#374151',
+                  color: it.kind === 'pin' ? 'white' : '#334155',
                 }}
               >
                 {it.kind === 'pin' ? '📌' : it.kind === 'room' ? '▭' : it.kind === 'floor' ? '🏠' : '⌘'}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm text-gray-800">{it.title}</div>
+                <div className="truncate text-sm text-ink">{it.title}</div>
                 {it.subtitle && (
-                  <div className="truncate text-[11px] text-gray-500">{it.subtitle}</div>
+                  <div className="truncate text-[11px] text-ink-subtle">{it.subtitle}</div>
                 )}
               </div>
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between border-t border-blueprint-line/60 bg-gray-50/60 px-3 py-1.5 text-[10px] text-gray-500">
+        <div className="flex items-center justify-between border-t border-canvas-hairline bg-canvas-bg/60 px-3 py-1.5 text-[10px] text-ink-subtle">
           <span>↑↓ to navigate · ↵ to select</span>
           <span>{matches.length} results</span>
         </div>

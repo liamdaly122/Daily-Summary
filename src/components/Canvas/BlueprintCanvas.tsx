@@ -188,17 +188,17 @@ export const BlueprintCanvas = () => {
               x={20}
               y={20}
               text={floor?.name ?? ''}
-              fontSize={28}
+              fontSize={22}
               fontStyle="700"
-              fill="#1f2937"
-              opacity={0.9}
+              fill="#0f172a"
+              opacity={0.85}
             />
             <Text
               x={20}
-              y={54}
+              y={46}
               text={`${floor?.rooms.length ?? 0} rooms · double-click a room to open it`}
-              fontSize={12}
-              fill="#6b7280"
+              fontSize={11}
+              fill="#94a3b8"
             />
           </Group>
 
@@ -232,10 +232,10 @@ export const BlueprintCanvas = () => {
                   listening={false}
                 >
                   <Circle
-                    radius={4}
+                    radius={3.5}
                     fill={CATEGORY_COLOR[pin.category]}
                     stroke={pin.done ? '#10b981' : '#ffffff'}
-                    strokeWidth={pin.done ? 1.5 : 1}
+                    strokeWidth={pin.done ? 1.2 : 0.8}
                     opacity={pin.done ? 0.55 : 1}
                   />
                 </Group>
@@ -248,11 +248,12 @@ export const BlueprintCanvas = () => {
               y={dragRect.height < 0 ? dragRect.y + dragRect.height : dragRect.y}
               width={Math.abs(dragRect.width)}
               height={Math.abs(dragRect.height)}
-              fill="rgba(59, 130, 246, 0.1)"
-              stroke="#3b82f6"
-              strokeWidth={1.5}
+              fill="rgba(37, 99, 235, 0.08)"
+              stroke="#2563eb"
+              strokeWidth={1.2}
               dash={[4, 4]}
               listening={false}
+              cornerRadius={2}
             />
           )}
         </Layer>

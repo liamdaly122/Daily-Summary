@@ -127,7 +127,6 @@ export interface PanelState {
 }
 
 export interface UIState {
-  sidebarOpen: boolean
   showGrid: boolean
   showHeatmap: boolean
   filter: {

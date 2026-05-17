@@ -7,28 +7,46 @@
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
 }
 
 html, body, #root {
   height: 100%;
   margin: 0;
-  background: #f7f5ef;
-  color: #2a2a2a;
+  background: #fbfaf7;
+  color: #0f172a;
   overflow: hidden;
 }
 
-/* Make Konva stage container fill its parent */
 .konvajs-content {
   width: 100% !important;
   height: 100% !important;
 }
 
-/* Subtle range track */
-input[type='range'] {
-  accent-color: #3b82f6;
-}
+input[type='range'] { accent-color: #2563eb; }
 
-/* Scrollbars in side panels */
 .scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
-.scroll-thin::-webkit-scrollbar-thumb { background: #d8d2c2; border-radius: 4px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #e2e2e0; border-radius: 4px; }
+.scroll-thin::-webkit-scrollbar-thumb:hover { background: #cfcfcb; }
 .scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* Reusable input/button surfaces */
+.field {
+  @apply w-full rounded-lg border border-canvas-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors;
+}
+.field:focus { @apply border-accent shadow-ring; }
+
+.btn {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors;
+}
+.btn-ghost { @apply text-ink-muted hover:bg-canvas-hairline hover:text-ink; }
+.btn-soft { @apply border border-canvas-line bg-white text-ink-muted hover:border-ink-faint hover:text-ink; }
+.btn-primary { @apply bg-accent text-white hover:bg-blue-700; }
+.btn-danger { @apply text-red-500 border border-red-200 hover:border-red-300 hover:bg-red-50; }
+
+/* Subtle entrance for panels */
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.panel-in { animation: panelIn 160ms cubic-bezier(0.22, 1, 0.36, 1); }

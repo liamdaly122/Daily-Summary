@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/useStore'
 import { FloatingPanel } from './FloatingPanel'
+import { useViewport } from '../lib/useViewport'
 import {
   CATEGORY_COLOR,
   CATEGORY_LABEL,
@@ -21,6 +22,15 @@ interface Row {
   floorName: string
 }
 
+const ListIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+    <path d="M8 6h13M8 12h13M8 18h13" />
+    <circle cx="4" cy="6" r="1" />
+    <circle cx="4" cy="12" r="1" />
+    <circle cx="4" cy="18" r="1" />
+  </svg>
+)
+
 export const AllTodos = () => {
   const floors = useStore((s) => s.floors)
   const setSelection = useStore((s) => s.setSelection)
@@ -28,6 +38,7 @@ export const AllTodos = () => {
   const focusRoom = useStore((s) => s.focusRoom)
   const togglePinDone = useStore((s) => s.togglePinDone)
   const removePin = useStore((s) => s.removePin)
+  const { width: vw } = useViewport()
 
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('priority')
@@ -86,46 +97,53 @@ export const AllTodos = () => {
 
   const totalOpen = rows.filter((r) => !r.pin.done).length
 
+  if (vw === 0) return null
+  // Collapsed icon sits at top-right edge near the Search button.
+  // Place it slightly to the LEFT of the search button so they form a row.
+  const defaultX = Math.max(16, vw - 108)
+  const defaultY = 16
+
   return (
     <FloatingPanel
       id="all-todos"
       title={`All todos · ${totalOpen} open`}
-      icon={<span>📋</span>}
-      defaultX={Math.max(16, Math.round(window.innerWidth - 760))}
-      defaultY={16}
-      width={400}
+      icon={<span className="text-ink-muted"><ListIcon /></span>}
+      defaultX={defaultX}
+      defaultY={defaultY}
+      width={380}
+      defaultCollapsed={true}
     >
       <div className="flex flex-col gap-2 p-3">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search todos, rooms…"
-          className="w-full rounded-md border border-blueprint-line bg-white px-2 py-1.5 text-sm outline-none focus:border-blueprint-accent"
+          className="field"
         />
         <div className="flex items-center gap-1 text-[11px]">
-          <span className="text-gray-400">Sort</span>
+          <span className="text-ink-faint">Sort</span>
           {(['priority', 'updated', 'cost', 'room'] as SortKey[]).map((k) => (
             <button
               key={k}
               onClick={() => setSortKey(k)}
-              className={`rounded-md px-1.5 py-0.5 ${
+              className={`rounded-md px-1.5 py-0.5 capitalize ${
                 sortKey === k
-                  ? 'bg-blueprint-accent text-white'
-                  : 'border border-gray-200 text-gray-600 hover:border-gray-300'
+                  ? 'bg-accent text-white'
+                  : 'border border-canvas-line text-ink-muted hover:border-ink-faint'
               }`}
             >
               {k}
             </button>
           ))}
-          <label className="ml-auto flex items-center gap-1 text-gray-500">
+          <label className="ml-auto flex items-center gap-1 text-ink-muted">
             <input type="checkbox" checked={hideDone} onChange={(e) => setHideDone(e.target.checked)} />
             Hide done
           </label>
         </div>
 
-        <div className="flex flex-col">
+        <div className="-mx-1 flex flex-col">
           {filtered.length === 0 && (
-            <div className="rounded-md border border-dashed border-blueprint-line p-4 text-center text-xs text-gray-400">
+            <div className="rounded-md border border-dashed border-canvas-line p-6 text-center text-xs text-ink-faint">
               {search ? 'No todos match' : 'No todos yet — drop a pin in a room'}
             </div>
           )}
@@ -133,7 +151,7 @@ export const AllTodos = () => {
             <div
               key={r.pin.id}
               onClick={() => openPin(r)}
-              className="group flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1.5 hover:border-blueprint-line hover:bg-white"
+              className="group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-canvas-hairline"
             >
               <input
                 type="checkbox"
@@ -149,12 +167,12 @@ export const AllTodos = () => {
               <div className="min-w-0 flex-1">
                 <div
                   className={`truncate text-xs font-medium ${
-                    r.pin.done ? 'text-gray-400 line-through' : 'text-gray-800'
+                    r.pin.done ? 'text-ink-faint line-through' : 'text-ink'
                   }`}
                 >
                   {r.pin.title || 'Untitled'}
                 </div>
-                <div className="truncate text-[10px] text-gray-500">
+                <div className="truncate text-[10px] text-ink-subtle">
                   {r.floorName} · {r.roomName}
                 </div>
               </div>
@@ -164,7 +182,7 @@ export const AllTodos = () => {
                 title={PRIORITY_LABEL[r.pin.priority]}
               />
               {r.pin.estimatedCost > 0 && (
-                <span className="text-[10px] text-gray-400">£{r.pin.estimatedCost}</span>
+                <span className="text-[10px] text-ink-muted">£{r.pin.estimatedCost}</span>
               )}
               <button
                 title="Delete"
@@ -172,7 +190,7 @@ export const AllTodos = () => {
                   e.stopPropagation()
                   removePin(r.roomId, r.pin.id)
                 }}
-                className="rounded p-0.5 text-gray-300 opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                className="rounded p-0.5 text-ink-faint opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M6 6l12 12M6 18L18 6" />

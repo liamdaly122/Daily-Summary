@@ -1,8 +1,8 @@
 import { useActiveFloor, useStore } from '../store/useStore'
 
 /**
- * Lightweight floating control. Not a draggable panel — small, always-anchored
- * to the bottom-right. Shows zoom controls in plan view, room context in room view.
+ * Compact bottom-left control bar. Plan view: zoom in/out/reset. Room view:
+ * back-to-floor + room name chip.
  */
 export const ZoomBadge = () => {
   const focusedRoomId = useStore((s) => s.view.focusedRoomId)
@@ -13,40 +13,44 @@ export const ZoomBadge = () => {
   const room = floor?.rooms.find((r) => r.id === focusedRoomId)
 
   return (
-    <div className="pointer-events-auto absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-xl border border-blueprint-line bg-white/95 px-2 py-1.5 text-xs shadow-pop backdrop-blur">
+    <div className="pointer-events-auto absolute bottom-4 left-4 z-20 flex items-center gap-1 rounded-xl border border-canvas-line bg-white/95 px-1.5 py-1 text-xs shadow-soft backdrop-blur">
       {room ? (
         <>
           <button
             onClick={() => focusRoom(null)}
-            className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-gray-600 hover:border-blueprint-accent hover:text-blueprint-accent"
+            className="btn btn-ghost"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6" />
             </svg>
-            Back to floor
+            Back
           </button>
-          <span className="px-1 font-semibold text-gray-700">{room.name}</span>
+          <span className="mx-1 h-4 w-px bg-canvas-line" />
+          <span className="px-1 text-[12px] font-semibold text-ink">{room.name}</span>
         </>
       ) : (
         <>
           <button
+            title="Zoom out"
             onClick={() => setView({ scale: Math.max(0.2, scale / 1.2) })}
-            className="rounded-md border border-gray-200 px-2 py-1 text-gray-600 hover:border-gray-300"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-ink-muted hover:bg-canvas-hairline hover:text-ink"
           >
             −
           </button>
-          <span className="w-12 text-center font-mono text-[11px] text-gray-600">
+          <span className="w-10 text-center font-mono text-[11px] text-ink-muted">
             {Math.round(scale * 100)}%
           </span>
           <button
+            title="Zoom in"
             onClick={() => setView({ scale: Math.min(4, scale * 1.2) })}
-            className="rounded-md border border-gray-200 px-2 py-1 text-gray-600 hover:border-gray-300"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-ink-muted hover:bg-canvas-hairline hover:text-ink"
           >
             +
           </button>
+          <span className="mx-1 h-4 w-px bg-canvas-line" />
           <button
             onClick={() => setView({ scale: 1, x: 40, y: 40 })}
-            className="rounded-md border border-gray-200 px-2 py-1 text-gray-600 hover:border-gray-300"
+            className="rounded-md px-2 py-1 text-[11px] text-ink-muted hover:bg-canvas-hairline hover:text-ink"
           >
             Reset
           </button>

@@ -20,58 +20,64 @@ const TYPES: RoomType[] = [
   'outdoor',
 ]
 
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">
+    {children}
+  </div>
+)
+
 export const RoomEditor = ({ room }: Props) => {
   const updateRoom = useStore((s) => s.updateRoom)
   const removeRoom = useStore((s) => s.removeRoom)
   const focusRoom = useStore((s) => s.focusRoom)
+  const focusedRoomId = useStore((s) => s.view.focusedRoomId)
 
   const totalEst = room.pins.reduce((s, p) => s + p.estimatedCost, 0)
   const totalAct = room.pins.reduce((s, p) => s + p.actualCost, 0)
   const done = room.pins.filter((p) => p.done).length
+  const isFocused = focusedRoomId === room.id
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-auto p-4 scroll-thin">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          Room
-        </div>
-        <div className="flex gap-1">
+    <div className="flex h-full flex-col gap-4 overflow-auto px-4 py-3 scroll-thin">
+      <div className="flex items-center gap-1.5">
+        {!isFocused && (
           <button
             onClick={() => focusRoom(room.id)}
-            className="rounded-md bg-blueprint-accent px-2 py-1 text-xs font-medium text-white"
+            className="btn btn-primary"
           >
-            Zoom in →
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            Open
           </button>
-          <button
-            onClick={() => {
-              if (confirm(`Delete "${room.name}" and its ${room.pins.length} pins?`))
-                removeRoom(room.id)
-            }}
-            className="rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:border-red-300 hover:text-red-500"
-          >
-            Delete
-          </button>
-        </div>
+        )}
+        <div className="ml-auto" />
+        <button
+          onClick={() => removeRoom(room.id)}
+          className="btn btn-danger"
+        >
+          Delete room
+        </button>
       </div>
 
       <input
         value={room.name}
         onChange={(e) => updateRoom(room.id, { name: e.target.value })}
         placeholder="Room name"
-        className="w-full rounded-lg border border-blueprint-line bg-white px-3 py-2 text-base font-semibold outline-none focus:border-blueprint-accent"
+        className="w-full rounded-lg border border-canvas-line bg-white px-3 py-2 text-[15px] font-semibold outline-none transition-colors focus:border-accent focus:shadow-ring"
       />
 
       <div>
-        <div className="mb-1 text-xs font-medium text-gray-500">Type</div>
-        <div className="grid grid-cols-2 gap-1.5">
+        <SectionLabel>Type</SectionLabel>
+        <div className="grid grid-cols-2 gap-1">
           {TYPES.map((t) => (
             <button
               key={t}
               onClick={() => updateRoom(room.id, { type: t })}
-              className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-[12px] transition-all ${
                 room.type === t
-                  ? 'border-blueprint-accent bg-blueprint-accent/10 text-blueprint-accent'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  ? 'border-accent bg-accent/8 text-accent'
+                  : 'border-canvas-line bg-white text-ink-muted hover:border-ink-faint hover:text-ink'
               }`}
             >
               <span>{ROOM_TYPE_ICON[t]}</span>
@@ -81,33 +87,20 @@ export const RoomEditor = ({ room }: Props) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg border border-blueprint-line bg-white p-2">
-          <div className="text-[10px] uppercase text-gray-400">Width</div>
-          <div className="text-sm font-semibold">
-            {formatMeters(unitsToMeters(room.width))}
-          </div>
-        </div>
-        <div className="rounded-lg border border-blueprint-line bg-white p-2">
-          <div className="text-[10px] uppercase text-gray-400">Depth</div>
-          <div className="text-sm font-semibold">
-            {formatMeters(unitsToMeters(room.height))}
-          </div>
-        </div>
-        <div className="col-span-2 rounded-lg border border-blueprint-line bg-white p-2">
-          <div className="text-[10px] uppercase text-gray-400">Floor area</div>
-          <div className="text-sm font-semibold">{formatArea(areaMeters(room))}</div>
-        </div>
+      <div className="grid grid-cols-3 gap-1.5 text-center">
+        <Stat label="W" value={formatMeters(unitsToMeters(room.width))} />
+        <Stat label="D" value={formatMeters(unitsToMeters(room.height))} />
+        <Stat label="Area" value={formatArea(areaMeters(room))} />
       </div>
 
-      <div className="rounded-xl border border-blueprint-line bg-white p-3">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          Progress
+      <div className="rounded-lg border border-canvas-line bg-white p-3">
+        <div className="flex items-baseline justify-between">
+          <SectionLabel>Progress</SectionLabel>
+          <span className="text-[11px] text-ink-muted">
+            {done} / {room.pins.length} done
+          </span>
         </div>
-        <div className="mt-1 text-sm">
-          {done} / {room.pins.length} todos done
-        </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-hairline">
           <div
             className="h-full rounded-full bg-emerald-500 transition-all"
             style={{
@@ -117,22 +110,20 @@ export const RoomEditor = ({ room }: Props) => {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <div>
-            <div className="text-gray-400">Estimated</div>
-            <div className="font-semibold text-gray-700">{formatCurrency(totalEst)}</div>
+            <div className="text-ink-subtle">Estimated</div>
+            <div className="font-semibold text-ink">{formatCurrency(totalEst)}</div>
           </div>
           <div>
-            <div className="text-gray-400">Actual</div>
-            <div className="font-semibold text-gray-700">{formatCurrency(totalAct)}</div>
+            <div className="text-ink-subtle">Actual</div>
+            <div className="font-semibold text-ink">{formatCurrency(totalAct)}</div>
           </div>
         </div>
       </div>
 
       {room.pins.length > 0 && (
         <div>
-          <div className="mb-1 text-xs font-medium text-gray-500">
-            Todos ({room.pins.length})
-          </div>
-          <div className="flex flex-col gap-1">
+          <SectionLabel>Todos · {room.pins.length}</SectionLabel>
+          <div className="-mx-1 flex flex-col">
             {room.pins.map((p) => (
               <PinRow key={p.id} pin={p} roomId={room.id} />
             ))}
@@ -140,12 +131,21 @@ export const RoomEditor = ({ room }: Props) => {
         </div>
       )}
 
-      <div className="mt-auto rounded-lg bg-blueprint-line/30 p-2 text-[11px] text-gray-500">
-        Tip: double-click a room on the floor plan to zoom in and start pinning todos.
-      </div>
+      {!isFocused && (
+        <div className="mt-auto rounded-md bg-canvas-hairline p-2 text-[11px] text-ink-muted">
+          Tip: double-click the room on the floor plan to open it.
+        </div>
+      )}
     </div>
   )
 }
+
+const Stat = ({ label, value }: { label: string; value: string }) => (
+  <div className="rounded-md border border-canvas-line bg-white py-1.5">
+    <div className="text-[10px] uppercase text-ink-subtle">{label}</div>
+    <div className="text-[13px] font-semibold text-ink">{value}</div>
+  </div>
+)
 
 const PinRow = ({ pin, roomId }: { pin: Room['pins'][number]; roomId: string }) => {
   const setSelection = useStore((s) => s.setSelection)
@@ -154,7 +154,7 @@ const PinRow = ({ pin, roomId }: { pin: Room['pins'][number]; roomId: string }) 
   return (
     <div
       onClick={() => setSelection({ kind: 'pin', roomId, pinId: pin.id })}
-      className="group flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-xs hover:border-blueprint-line hover:bg-white"
+      className="group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] hover:bg-canvas-hairline"
     >
       <input
         type="checkbox"
@@ -165,11 +165,11 @@ const PinRow = ({ pin, roomId }: { pin: Room['pins'][number]; roomId: string }) 
         }}
         onClick={(e) => e.stopPropagation()}
       />
-      <span className={`flex-1 truncate ${pin.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+      <span className={`flex-1 truncate ${pin.done ? 'text-ink-faint line-through' : 'text-ink'}`}>
         {pin.title || 'Untitled'}
       </span>
       {pin.estimatedCost > 0 && (
-        <span className="text-[10px] text-gray-400">£{pin.estimatedCost}</span>
+        <span className="text-[10px] text-ink-subtle">£{pin.estimatedCost}</span>
       )}
       <button
         title="Delete pin"
@@ -177,9 +177,9 @@ const PinRow = ({ pin, roomId }: { pin: Room['pins'][number]; roomId: string }) 
           e.stopPropagation()
           remove(roomId, pin.id)
         }}
-        className="rounded p-0.5 text-gray-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+        className="rounded p-0.5 text-ink-faint opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
       >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M6 6l12 12M6 18L18 6" />
         </svg>
       </button>

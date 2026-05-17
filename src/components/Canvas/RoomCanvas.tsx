@@ -16,11 +16,6 @@ interface Props {
   room: Room
 }
 
-/**
- * Full-bleed canvas focused on a single room. Click anywhere inside the room
- * outline to drop a pin at that location. Pins render as compact sticky
- * cards and can be dragged within the room.
- */
 export const RoomCanvas = ({ room }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<Konva.Stage>(null)
@@ -44,8 +39,7 @@ export const RoomCanvas = ({ room }: Props) => {
     return () => ro.disconnect()
   }, [])
 
-  // Fit room into the viewport with padding for labels
-  const padding = 120
+  const padding = 140
   const fit = Math.min(
     (size.w - padding * 2) / Math.max(room.width, 1),
     (size.h - padding * 2) / Math.max(room.height, 1),
@@ -62,11 +56,8 @@ export const RoomCanvas = ({ room }: Props) => {
   })
 
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Only react to clicks on the background — pins/buttons handle their own.
-    const name = e.target.name?.()
-    if (name !== 'room-bg' && name !== 'stage-bg') {
-      return
-    }
+    const name = typeof e.target.name === 'function' ? e.target.name() : ''
+    if (name !== 'room-bg' && name !== 'stage-bg') return
     const stage = stageRef.current
     if (!stage) return
     const ptr = stage.getPointerPosition()
@@ -76,8 +67,6 @@ export const RoomCanvas = ({ room }: Props) => {
       setSelection(null)
       return
     }
-
-    // room-bg → add a pin at this local position
     const lx = (ptr.x - offsetX) / scale
     const ly = (ptr.y - offsetY) / scale
     if (lx < 4 || ly < 4 || lx > room.width - 4 || ly > room.height - 4) return
@@ -104,79 +93,71 @@ export const RoomCanvas = ({ room }: Props) => {
         onMouseDown={handleStageMouseDown}
         onTouchStart={handleStageMouseDown as never}
       >
-        {/* Paper background — also captures off-room clicks to deselect */}
+        {/* Paper background */}
         <Layer>
-          <Rect name="stage-bg" width={size.w} height={size.h} fill="#efe9d8" />
+          <Rect name="stage-bg" width={size.w} height={size.h} fill="#f4f2ed" />
           {showGrid && <DotGrid w={size.w} h={size.h} />}
         </Layer>
 
-        {/* The room itself */}
+        {/* Room */}
         <Layer>
           <Group x={offsetX} y={offsetY}>
-            {/* Outline */}
             <Rect
               name="room-bg"
               width={room.width * scale}
               height={room.height * scale}
               fill={ROOM_TYPE_COLOR[room.type]}
-              stroke="#2a2a2a"
-              strokeWidth={2}
-              cornerRadius={3}
+              stroke="#cbd5e1"
+              strokeWidth={1.5}
+              cornerRadius={4}
               shadowColor="#000"
-              shadowBlur={28}
-              shadowOpacity={0.08}
-              shadowOffset={{ x: 0, y: 4 }}
+              shadowBlur={32}
+              shadowOpacity={0.06}
+              shadowOffset={{ x: 0, y: 6 }}
             />
-
-            {/* Dim borderlines for a blueprint vibe */}
             <Rect
               listening={false}
               x={6}
               y={6}
               width={room.width * scale - 12}
               height={room.height * scale - 12}
-              stroke="#cfc7b3"
-              strokeWidth={0.7}
+              stroke="#e5e7eb"
+              strokeWidth={0.6}
               dash={[3, 4]}
-              cornerRadius={2}
+              cornerRadius={3}
             />
-
-            {/* Title (top-left, large) */}
             <Group listening={false}>
               <Text
                 x={16}
                 y={14}
                 text={`${ROOM_TYPE_ICON[room.type]}  ${room.name}`}
                 fontStyle="700"
-                fontSize={20}
-                fill="#1f2937"
+                fontSize={18}
+                fill="#0f172a"
               />
               <Text
                 x={16}
-                y={40}
+                y={38}
                 text={`${ROOM_TYPE_LABEL[room.type]} · ${formatMeters(unitsToMeters(room.width))} × ${formatMeters(unitsToMeters(room.height))} · ${formatArea(areaMeters(room))}`}
-                fontSize={11}
-                fill="#6b7280"
+                fontSize={10}
+                fill="#94a3b8"
               />
             </Group>
-
-            {/* Hint when empty */}
             {pinsVisible.length === 0 && (
               <Text
                 listening={false}
                 x={0}
-                y={room.height * scale / 2 - 12}
+                y={room.height * scale / 2 - 8}
                 width={room.width * scale}
                 align="center"
                 text="Click anywhere to drop a todo pin"
-                fontSize={13}
+                fontSize={12}
                 fontStyle="500"
-                fill="#9ca3af"
+                fill="#cbd5e1"
               />
             )}
           </Group>
 
-          {/* Pins layer — positioned in screen pixels */}
           {pinsVisible.map((pin) => (
             <RoomPin
               key={pin.id}
@@ -205,11 +186,11 @@ export const RoomCanvas = ({ room }: Props) => {
 }
 
 const DotGrid = ({ w, h }: { w: number; h: number }) => {
-  const step = 18
+  const step = 20
   const dots: JSX.Element[] = []
   for (let x = step; x < w; x += step) {
     for (let y = step; y < h; y += step) {
-      dots.push(<Circle key={`${x},${y}`} x={x} y={y} radius={0.8} fill="#cfc7b3" listening={false} />)
+      dots.push(<Circle key={`${x},${y}`} x={x} y={y} radius={0.7} fill="#d4d1c8" listening={false} />)
     }
   }
   return <Group listening={false}>{dots}</Group>
@@ -227,9 +208,11 @@ interface PinProps {
 }
 
 const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDelete }: PinProps) => {
-  const W = selected ? 180 : 150
-  const H = selected ? (pin.description ? 96 : 56) : 56
+  const W = selected ? 200 : 156
+  const H = selected ? (pin.description ? 96 : 52) : 52
   const accent = CATEGORY_COLOR[pin.category]
+  const subtaskCount = pin.subtasks?.length ?? 0
+  const subtaskDone = (pin.subtasks ?? []).filter((s) => s.done).length
 
   return (
     <Group
@@ -247,7 +230,7 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
       }}
       onMouseDown={(e) => (e.cancelBubble = true)}
     >
-      {/* shadow card */}
+      {/* card */}
       <Rect
         x={-W / 2}
         y={-12}
@@ -255,79 +238,75 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
         height={H}
         cornerRadius={10}
         fill="#ffffff"
-        stroke={selected ? '#3b82f6' : '#e5e7eb'}
-        strokeWidth={selected ? 2 : 1}
-        shadowColor="#000"
-        shadowBlur={selected ? 16 : 8}
-        shadowOpacity={selected ? 0.18 : 0.1}
+        stroke={selected ? '#2563eb' : '#e5e7eb'}
+        strokeWidth={selected ? 1.5 : 1}
+        shadowColor="#0f172a"
+        shadowBlur={selected ? 14 : 6}
+        shadowOpacity={selected ? 0.18 : 0.08}
         shadowOffset={{ x: 0, y: 3 }}
       />
-      {/* accent stripe */}
-      <Rect x={-W / 2} y={-12} width={4} height={H} cornerRadius={[10, 0, 0, 10]} fill={accent} />
-      {/* pin point (drop shadow circle) */}
-      <Circle x={0} y={-12} radius={5} fill={accent} stroke="#fff" strokeWidth={1.5} />
+      <Rect x={-W / 2} y={-12} width={3} height={H} cornerRadius={[10, 0, 0, 10]} fill={accent} />
+      <Circle x={0} y={-12} radius={4.5} fill={accent} stroke="#fff" strokeWidth={1.5} />
 
-      {/* title */}
       <Text
         x={-W / 2 + 10}
-        y={-4}
-        width={W - 44}
-        height={20}
+        y={-3}
+        width={W - 50}
+        height={18}
         text={pin.title || 'Untitled'}
         fontStyle="600"
         fontSize={12}
-        fill={pin.done ? '#9ca3af' : '#111827'}
+        fill={pin.done ? '#94a3b8' : '#0f172a'}
         textDecoration={pin.done ? 'line-through' : ''}
         ellipsis
         wrap="none"
       />
 
       {/* meta row */}
-      <Group y={16}>
-        <Circle x={-W / 2 + 16} y={6} radius={3} fill={PRIORITY_COLOR[pin.priority]} listening={false} />
+      <Group y={15}>
+        <Circle x={-W / 2 + 16} y={6} radius={2.5} fill={PRIORITY_COLOR[pin.priority]} listening={false} />
         {pin.estimatedCost > 0 && (
           <Text
-            x={-W / 2 + 26}
+            x={-W / 2 + 25}
             y={2}
             text={`£${pin.estimatedCost}`}
             fontSize={10}
-            fill="#6b7280"
+            fill="#64748b"
             listening={false}
           />
         )}
-        {(pin.subtasks?.length ?? 0) > 0 && (
+        {subtaskCount > 0 && (
           <Text
-            x={-W / 2 + 58}
+            x={-W / 2 + 56}
             y={2}
-            text={`☐ ${(pin.subtasks ?? []).filter((s) => s.done).length}/${pin.subtasks!.length}`}
+            text={`☐ ${subtaskDone}/${subtaskCount}`}
             fontSize={10}
-            fill="#6b7280"
+            fill="#64748b"
             listening={false}
           />
         )}
         {(pin.links?.length ?? 0) > 0 && (
           <Text
-            x={-W / 2 + 100}
+            x={-W / 2 + 96}
             y={2}
             text={`🔗 ${pin.links!.length}`}
             fontSize={10}
-            fill="#6b7280"
+            fill="#64748b"
             listening={false}
           />
         )}
         {pin.photos.length > 0 && (
           <Text
-            x={-W / 2 + 124}
+            x={-W / 2 + 120}
             y={2}
             text={`📷 ${pin.photos.length}`}
             fontSize={10}
-            fill="#6b7280"
+            fill="#64748b"
             listening={false}
           />
         )}
       </Group>
 
-      {/* description preview when selected */}
       {selected && pin.description && (
         <Text
           x={-W / 2 + 10}
@@ -336,7 +315,7 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
           height={48}
           text={pin.description}
           fontSize={11}
-          fill="#4b5563"
+          fill="#475569"
           ellipsis
           wrap="word"
         />
@@ -344,7 +323,7 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
 
       {/* done checkbox */}
       <Group
-        x={W / 2 - 46}
+        x={W / 2 - 44}
         y={-2}
         onClick={(e) => {
           e.cancelBubble = true
@@ -356,25 +335,25 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
         }}
       >
         <Rect
-          width={16}
-          height={16}
-          cornerRadius={4}
+          width={14}
+          height={14}
+          cornerRadius={3}
           fill={pin.done ? '#10b981' : '#ffffff'}
-          stroke={pin.done ? '#10b981' : '#d1d5db'}
-          strokeWidth={1.5}
+          stroke={pin.done ? '#10b981' : '#cbd5e1'}
+          strokeWidth={1.2}
         />
         {pin.done && (
           <Line
-            points={[3, 8, 7, 12, 13, 4]}
+            points={[3, 7, 6, 10, 11, 4]}
             stroke="#ffffff"
-            strokeWidth={2}
+            strokeWidth={1.8}
             lineCap="round"
             lineJoin="round"
           />
         )}
       </Group>
 
-      {/* delete × — always visible, one click, no confirm */}
+      {/* delete × — always visible */}
       <Group
         x={W / 2 - 22}
         y={-2}
@@ -396,27 +375,15 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
         }}
       >
         <Rect
-          width={16}
-          height={16}
-          cornerRadius={4}
+          width={14}
+          height={14}
+          cornerRadius={3}
           fill="#ffffff"
           stroke="#e5e7eb"
           strokeWidth={1}
         />
-        <Line
-          points={[4, 4, 12, 12]}
-          stroke="#ef4444"
-          strokeWidth={1.8}
-          lineCap="round"
-          listening={false}
-        />
-        <Line
-          points={[12, 4, 4, 12]}
-          stroke="#ef4444"
-          strokeWidth={1.8}
-          lineCap="round"
-          listening={false}
-        />
+        <Line points={[4, 4, 10, 10]} stroke="#ef4444" strokeWidth={1.4} lineCap="round" listening={false} />
+        <Line points={[10, 4, 4, 10]} stroke="#ef4444" strokeWidth={1.4} lineCap="round" listening={false} />
       </Group>
     </Group>
   )

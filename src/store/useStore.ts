@@ -148,7 +148,6 @@ const buildInitial = (): AppState => {
     lastDeleted: null,
     commandPaletteOpen: false,
     ui: {
-      sidebarOpen: persisted?.ui?.sidebarOpen ?? true,
       showGrid: persisted?.ui?.showGrid ?? true,
       showHeatmap: persisted?.ui?.showHeatmap ?? true,
       filter: persisted?.ui?.filter ?? {
@@ -177,7 +176,6 @@ interface Actions {
   setSelection: (s: Selection | null) => void
   setView: (v: Partial<AppState['view']>) => void
   focusRoom: (roomId: string | null) => void
-  toggleSidebar: () => void
   toggleGrid: () => void
   toggleHeatmap: () => void
   setFilterCategory: (c: Category | 'all') => void
@@ -345,7 +343,6 @@ export const useStore = create<AppState & Actions>((set, get) => ({
       tool: 'select',
     })),
 
-  toggleSidebar: () => set((s) => ({ ui: { ...s.ui, sidebarOpen: !s.ui.sidebarOpen } })),
   toggleGrid: () => set((s) => ({ ui: { ...s.ui, showGrid: !s.ui.showGrid } })),
   toggleHeatmap: () => set((s) => ({ ui: { ...s.ui, showHeatmap: !s.ui.showHeatmap } })),
 
@@ -568,11 +565,27 @@ export const useStore = create<AppState & Actions>((set, get) => ({
 
   setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
 
-  resetAll: () => set({ ...buildInitial(), floors: seedFloors(), activeFloorId: '' }),
+  resetAll: () => {
+    const freshFloors = seedFloors()
+    set({
+      floors: freshFloors,
+      activeFloorId: freshFloors[0].id,
+      tool: 'select',
+      selection: null,
+      view: { scale: 1, x: 0, y: 0, focusedRoomId: null },
+      lastDeleted: null,
+      commandPaletteOpen: false,
+    })
+  },
 }))
 
-// Persist on any change
-useStore.subscribe((state) => saveState(state))
+// Debounced persistence — saving on every keystroke is too aggressive
+// when pins hold base64 photos.
+let persistTimer: ReturnType<typeof setTimeout> | null = null
+useStore.subscribe((state) => {
+  if (persistTimer) clearTimeout(persistTimer)
+  persistTimer = setTimeout(() => saveState(state), 400)
+})
 
 /** Helpers */
 export const useActiveFloor = () =>
