@@ -324,7 +324,7 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
 
       {/* done checkbox */}
       <Group
-        x={W / 2 - 24}
+        x={W / 2 - 46}
         y={-2}
         onClick={(e) => {
           e.cancelBubble = true
@@ -354,19 +354,50 @@ const RoomPin = ({ pin, x, y, selected, onSelect, onDragEnd, onToggleDone, onDel
         )}
       </Group>
 
-      {/* delete (only when selected) */}
-      {selected && (
-        <Group
-          x={W / 2 - 14}
-          y={H - 20}
-          onClick={(e) => {
-            e.cancelBubble = true
-            if (confirm('Delete this pin?')) onDelete()
-          }}
-        >
-          <Text text="🗑" fontSize={10} listening={true} />
-        </Group>
-      )}
+      {/* delete × — always visible, one click, no confirm */}
+      <Group
+        x={W / 2 - 22}
+        y={-2}
+        onClick={(e) => {
+          e.cancelBubble = true
+          onDelete()
+        }}
+        onTap={(e) => {
+          e.cancelBubble = true
+          onDelete()
+        }}
+        onMouseEnter={(e) => {
+          const stage = e.target.getStage()
+          if (stage) stage.container().style.cursor = 'pointer'
+        }}
+        onMouseLeave={(e) => {
+          const stage = e.target.getStage()
+          if (stage) stage.container().style.cursor = ''
+        }}
+      >
+        <Rect
+          width={16}
+          height={16}
+          cornerRadius={4}
+          fill="#ffffff"
+          stroke="#e5e7eb"
+          strokeWidth={1}
+        />
+        <Line
+          points={[4, 4, 12, 12]}
+          stroke="#ef4444"
+          strokeWidth={1.8}
+          lineCap="round"
+          listening={false}
+        />
+        <Line
+          points={[12, 4, 4, 12]}
+          stroke="#ef4444"
+          strokeWidth={1.8}
+          lineCap="round"
+          listening={false}
+        />
+      </Group>
     </Group>
   )
 }

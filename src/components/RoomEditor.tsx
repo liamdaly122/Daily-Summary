@@ -150,10 +150,11 @@ export const RoomEditor = ({ room }: Props) => {
 const PinRow = ({ pin, roomId }: { pin: Room['pins'][number]; roomId: string }) => {
   const setSelection = useStore((s) => s.setSelection)
   const toggle = useStore((s) => s.togglePinDone)
+  const remove = useStore((s) => s.removePin)
   return (
-    <button
+    <div
       onClick={() => setSelection({ kind: 'pin', roomId, pinId: pin.id })}
-      className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-xs hover:border-blueprint-line hover:bg-white"
+      className="group flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-xs hover:border-blueprint-line hover:bg-white"
     >
       <input
         type="checkbox"
@@ -170,6 +171,18 @@ const PinRow = ({ pin, roomId }: { pin: Room['pins'][number]; roomId: string }) 
       {pin.estimatedCost > 0 && (
         <span className="text-[10px] text-gray-400">£{pin.estimatedCost}</span>
       )}
-    </button>
+      <button
+        title="Delete pin"
+        onClick={(e) => {
+          e.stopPropagation()
+          remove(roomId, pin.id)
+        }}
+        className="rounded p-0.5 text-gray-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M6 6l12 12M6 18L18 6" />
+        </svg>
+      </button>
+    </div>
   )
 }

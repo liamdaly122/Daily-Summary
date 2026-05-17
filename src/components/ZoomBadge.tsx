@@ -13,7 +13,7 @@ export const ZoomBadge = () => {
   const room = floor?.rooms.find((r) => r.id === focusedRoomId)
 
   return (
-    <div className="pointer-events-auto absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-xl border border-blueprint-line bg-white/95 px-2 py-1.5 text-xs shadow-pop backdrop-blur">
+    <div className="pointer-events-auto absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-xl border border-blueprint-line bg-white/95 px-2 py-1.5 text-xs shadow-pop backdrop-blur">
       {room ? (
         <>
           <button
